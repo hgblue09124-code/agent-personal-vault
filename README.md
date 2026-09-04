@@ -18,11 +18,18 @@ Agent-Core (Behavior & Intelligence)
        ↓
 Storage Contract (Provider Abstract Interface)
        ↓
-Personal Vault Format (Canonical Envelope + Domain Schemas)
-├── Local Store (Filesystem / Reference Implementation)
-├── CloudKit Adapter (Future)
-└── Other Storage Providers (Future: SQLite, PostgreSQL, DynamoDB, Key-Value)
+StorageProvider Abstraction (agent_personal_vault.providers)
+├── LocalFilesystemProvider (Offline-first Local Store)
+├── ICloudDriveProvider (Apple iCloud Drive Ubiquitous Container)
+└── Future Providers (SQLite, CloudKit, S3, etc.)
 ```
+
+### StorageProvider Abstraction
+`StorageProvider` is an abstract interface (`agent_personal_vault.providers.StorageProvider`) that decouples Agent-Core domain reasoning from underlying storage backends:
+
+* **LocalFilesystemProvider:** Primary offline-first storage provider using atomic write semantics on local disk.
+* **ICloudDriveProvider:** iCloud Drive-compatible storage provider operating on Apple ubiquitous container paths (`~/Library/Mobile Documents/iCloud~.../Documents`). It detects `.icloud` ubiquitous placeholder files when files are evicted/not downloaded locally, raising `StorageUnavailableError` or triggering download on demand.
+* **VaultSyncEngine:** Bi-directional sync engine (`agent_personal_vault.sync.VaultSyncEngine`) supporting local-only upload, remote-only download, identical no-op, and divergent conflict resolution. Conflicts generate deterministic conflict preservation copies (`<id>.conflict.<timestamp>.<hash>.json`) without silently overwriting divergent data.
 
 The vault is **DATA, not business logic**. Data structures are provider-independent and stored in deterministic JSON formats.
 
