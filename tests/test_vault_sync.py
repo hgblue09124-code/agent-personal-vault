@@ -35,7 +35,7 @@ def test_vault_sync_local_and_remote(tmp_path: Path):
     assert rep2.identical_count == 2
 
 
-def test_vault_sync_divergent_conflict_resolution(tmp_path: Path):
+def test_vault_sync_divergent_conflict_resolution_and_idempotency(tmp_path: Path):
     local_dir = tmp_path / "local"
     remote_dir = tmp_path / "icloud"
 
@@ -62,23 +62,31 @@ def test_vault_sync_divergent_conflict_resolution(tmp_path: Path):
     remote_p.put(env_remote)
 
     sync_engine = VaultSyncEngine(local_p, remote_p)
-    rep = sync_engine.sync()
 
-    assert rep.conflict_count == 1
-    assert len(rep.conflicts) == 1
+    # 1. First Sync
+    rep1 = sync_engine.sync()
+    assert rep1.conflict_count == 1
+    assert len(rep1.conflicts) == 1
 
-    c_rec = rep.conflicts[0]
-    assert c_rec.entity_id == "goal-conflict"
-    assert "conflict" in c_rec.conflict_copy_id
+    c_rec1 = rep1.conflicts[0]
+    assert c_rec1.entity_id == "goal-conflict"
+    c_id = c_rec1.conflict_copy_id
 
     # Primary entity in both stores has the newer local version
-    ret_local = local_p.get("goal", "goal-conflict")
-    ret_remote = remote_p.get("goal", "goal-conflict")
-    assert ret_local.data["title"] == "Local Version Goal"
-    assert ret_remote.data["title"] == "Local Version Goal"
+    assert local_p.get("goal", "goal-conflict").data["title"] == "Local Version Goal"
+    assert remote_p.get("goal", "goal-conflict").data["title"] == "Local Version Goal"
 
     # Conflict copy preserved in both stores
-    assert local_p.exists("goal", c_rec.conflict_copy_id)
-    assert remote_p.exists("goal", c_rec.conflict_copy_id)
-    conflict_env = local_p.get("goal", c_rec.conflict_copy_id)
+    assert local_p.exists("goal", c_id)
+    assert remote_p.exists("goal", c_id)
+    conflict_env = local_p.get("goal", c_id)
     assert conflict_env.data["title"] == "Remote Version Goal"
+
+    # 2. Second & Third Repeated Sync (Must NOT generate new conflict copies!)
+    rep2 = sync_engine.sync()
+    assert rep2.conflict_count == 0
+    assert rep2.uploaded_count == 0
+    assert rep2.downloaded_count == 0
+
+    rep3 = sync_engine.sync()
+    assert rep3.conflict_count == 0

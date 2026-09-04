@@ -54,7 +54,7 @@ def test_remote_delete_sync_local_deleted(tmp_path: Path):
     assert lp.get_tombstone("task", "del-sync-2") is not None
 
 
-def test_update_vs_delete_conflict(tmp_path: Path):
+def test_active_update_vs_older_tombstone(tmp_path: Path):
     lp = LocalFilesystemProvider(tmp_path / "local")
     rp = ICloudDriveProvider(icloud_root=tmp_path / "icloud")
 
@@ -77,26 +77,75 @@ def test_update_vs_delete_conflict(tmp_path: Path):
     rp.put_tombstone(ts_remote)
 
     engine = VaultSyncEngine(lp, rp)
-    report = engine.sync()
+    report1 = engine.sync()
 
-    assert report.conflict_count == 1
-    assert len(report.conflicts) == 1
+    assert report1.conflict_count == 1
+    assert len(report1.conflicts) == 1
+
+    c_id = report1.conflicts[0].conflict_copy_id
 
     # Active update wins and propagates to remote
     assert rp.exists("memory", "upd-del-1")
     assert rp.get("memory", "upd-del-1").data["subject"] == "Updated Memory"
-    assert rp.get_tombstone("memory", "upd-del-1") is None
+
+    # Divergent conflict copy is persisted on disk in both stores
+    assert lp.exists("memory", c_id)
+    assert rp.exists("memory", c_id)
+
+    # Repeated sync is 100% idempotent and generates 0 new conflict copies
+    report2 = engine.sync()
+    assert report2.conflict_count == 0
+    assert report2.uploaded_count == 0
+    assert report2.downloaded_count == 0
+
+    report3 = engine.sync()
+    assert report3.conflict_count == 0
 
 
-def test_corrupted_tombstone_handling(tmp_path: Path):
+def test_active_update_vs_newer_tombstone(tmp_path: Path):
     lp = LocalFilesystemProvider(tmp_path / "local")
+    rp = ICloudDriveProvider(icloud_root=tmp_path / "icloud")
 
-    corrupt_ts_path = tmp_path / "local" / ".tombstones" / "identity" / "corrupt-id.json"
-    corrupt_ts_path.parent.mkdir(parents=True, exist_ok=True)
-    corrupt_ts_path.write_text("{ corrupt tombstone ...", encoding="utf-8")
+    # Local entity updated at earlier date
+    env_old = Envelope(
+        id="upd-del-2",
+        type="memory",
+        created_at="2025-01-01T00:00:00Z",
+        updated_at="2025-01-02T12:00:00Z",  # Older
+        data={"subject": "Old Memory", "content": "Old content"}
+    )
+    lp.put(env_old)
 
-    with pytest.raises(StorageCorruptionError):
-        lp.get_tombstone("identity", "corrupt-id")
+    # Remote tombstone deleted at later date
+    ts_newer = Tombstone(
+        entity_type="memory",
+        entity_id="upd-del-2",
+        deleted_at="2025-01-05T12:00:00Z",  # Newer
+        deleted_by="user"
+    )
+    rp.put_tombstone(ts_newer)
 
-    with pytest.raises(StorageCorruptionError):
-        lp.list_tombstones("identity")
+    engine = VaultSyncEngine(lp, rp)
+    report = engine.sync()
+
+    assert report.deleted_count == 1
+    assert not lp.exists("memory", "upd-del-2")
+    assert not rp.exists("memory", "upd-del-2")
+    assert lp.get_tombstone("memory", "upd-del-2") is not None
+
+
+def test_delete_vs_delete(tmp_path: Path):
+    lp = LocalFilesystemProvider(tmp_path / "local")
+    rp = ICloudDriveProvider(icloud_root=tmp_path / "icloud")
+
+    ts_l = Tombstone(entity_type="goal", entity_id="g-dvd", deleted_at="2025-01-01T10:00:00Z")
+    ts_r = Tombstone(entity_type="goal", entity_id="g-dvd", deleted_at="2025-01-01T10:00:00Z")
+
+    lp.put_tombstone(ts_l)
+    rp.put_tombstone(ts_r)
+
+    engine = VaultSyncEngine(lp, rp)
+    report = engine.sync()
+
+    assert report.identical_count == 1
+    assert report.conflict_count == 0

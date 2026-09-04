@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, Any, List, Optional, Tuple
 
-from .models import Envelope, Tombstone, TYPE_TO_FOLDER
+from .models import Envelope, Tombstone, Provenance, TYPE_TO_FOLDER
 from .providers.base import StorageProvider, StorageUnavailableError
 from .serialization import canonical_dumps, canonical_hash
 
@@ -69,8 +69,10 @@ class VaultSyncEngine:
     - Deletions create tombstone records (.tombstones/<folder>/<id>.json).
     - Tombstone deletion timestamp is compared against entity updated_at timestamp.
     - If deleted_at >= updated_at: Deletion wins and propagates to other provider.
-    - If updated_at > deleted_at: Active update wins, conflict copy is preserved, active entity propagates.
+    - If updated_at > deleted_at: Active update wins, deterministic conflict copy is preserved on disk,
+      and active entity propagates cleanly.
     - Delete vs Delete: Both tombstones synchronized cleanly (no-op).
+    - Sync is restartable, deterministic, and idempotent. Repeated sync generates 0 duplicate conflict copies.
     """
 
     def __init__(
@@ -167,19 +169,43 @@ class VaultSyncEngine:
                 self.local_provider.put_tombstone(r_ts)
                 report.deleted_count += 1
             else:
-                # Active update wins over older deletion -> conflict preserved
-                ts_str = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
-                conflict_id = f"{entity_id}-conflict-{ts_str}-deleted"
+                # Active update wins over older deletion -> deterministic conflict copy preserved on disk
+                l_hash = canonical_hash(l_env.to_dict())
+                r_hash = f"TOMBSTONE:{r_ts.deleted_at}:{r_ts.deleted_by}"
+                c_hash = canonical_hash({"type": entity_type, "id": entity_id, "local": l_hash, "remote": r_hash})[:12]
+                conflict_id = f"{entity_id}-conflict-{c_hash}"
 
-                # Re-propagate active entity to remote
+                # Create and persist conflict envelope representing the divergent tombstone state
+                prov_obj = Provenance(
+                    source="sync_engine",
+                    source_id=entity_id,
+                    agent_version="1.0.0",
+                    metadata={
+                        "conflict_type": "update_vs_delete",
+                        "tombstone": r_ts.to_dict(),
+                        "winning_entity_updated_at": l_env.updated_at,
+                    }
+                )
+                conflict_env = Envelope(
+                    id=conflict_id,
+                    type=entity_type,
+                    created_at=r_ts.deleted_at,
+                    updated_at=r_ts.deleted_at,
+                    provenance=prov_obj,
+                    data=l_env.data
+                )
+                self.local_provider.put(conflict_env)
+                self.remote_provider.put(conflict_env)
+
+                # Re-propagate active entity to remote and clear remote tombstone
                 self.remote_provider.put(l_env)
                 self.remote_provider.delete_tombstone(entity_type, entity_id)
 
                 c_rec = ConflictRecord(
                     entity_type=entity_type,
                     entity_id=entity_id,
-                    local_hash=canonical_hash(l_env.to_dict()),
-                    remote_hash="DELETED",
+                    local_hash=l_hash,
+                    remote_hash=r_hash,
                     local_mtime=l_env.updated_at or "",
                     remote_mtime=r_ts.deleted_at,
                     conflict_copy_id=conflict_id,
@@ -197,19 +223,43 @@ class VaultSyncEngine:
                 self.remote_provider.put_tombstone(l_ts)
                 report.deleted_count += 1
             else:
-                # Active update wins over older deletion -> conflict preserved
-                ts_str = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
-                conflict_id = f"{entity_id}-conflict-{ts_str}-deleted"
+                # Active update wins over older deletion -> deterministic conflict copy preserved on disk
+                r_hash = canonical_hash(r_env.to_dict())
+                l_hash = f"TOMBSTONE:{l_ts.deleted_at}:{l_ts.deleted_by}"
+                c_hash = canonical_hash({"type": entity_type, "id": entity_id, "local": l_hash, "remote": r_hash})[:12]
+                conflict_id = f"{entity_id}-conflict-{c_hash}"
 
-                # Re-propagate active entity to local
+                # Create and persist conflict envelope representing the divergent tombstone state
+                prov_obj = Provenance(
+                    source="sync_engine",
+                    source_id=entity_id,
+                    agent_version="1.0.0",
+                    metadata={
+                        "conflict_type": "update_vs_delete",
+                        "tombstone": l_ts.to_dict(),
+                        "winning_entity_updated_at": r_env.updated_at,
+                    }
+                )
+                conflict_env = Envelope(
+                    id=conflict_id,
+                    type=entity_type,
+                    created_at=l_ts.deleted_at,
+                    updated_at=l_ts.deleted_at,
+                    provenance=prov_obj,
+                    data=r_env.data
+                )
+                self.local_provider.put(conflict_env)
+                self.remote_provider.put(conflict_env)
+
+                # Re-propagate active entity to local and clear local tombstone
                 self.local_provider.put(r_env)
                 self.local_provider.delete_tombstone(entity_type, entity_id)
 
                 c_rec = ConflictRecord(
                     entity_type=entity_type,
                     entity_id=entity_id,
-                    local_hash="DELETED",
-                    remote_hash=canonical_hash(r_env.to_dict()),
+                    local_hash=l_hash,
+                    remote_hash=r_hash,
                     local_mtime=l_ts.deleted_at,
                     remote_mtime=r_env.updated_at or "",
                     conflict_copy_id=conflict_id,
@@ -242,8 +292,8 @@ class VaultSyncEngine:
 
             # Divergent Conflict!
             report.conflict_count += 1
-            ts_str = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
-            conflict_copy_id = f"{entity_id}-conflict-{ts_str}-{l_hash[:8]}"
+            c_hash = canonical_hash({"type": entity_type, "id": entity_id, "local": l_hash, "remote": r_hash})[:12]
+            conflict_copy_id = f"{entity_id}-conflict-{c_hash}"
 
             l_updated = l_env.updated_at or ""
             r_updated = r_env.updated_at or ""

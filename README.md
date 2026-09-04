@@ -29,7 +29,7 @@ StorageProvider Abstraction (agent_personal_vault.providers)
 
 * **LocalFilesystemProvider:** Primary offline-first storage provider using atomic write semantics on local disk.
 * **ICloudDriveProvider:** iCloud Drive-compatible storage provider operating on Apple ubiquitous container paths (`~/Library/Mobile Documents/iCloud~.../Documents`). It detects `.icloud` ubiquitous placeholder files when files are evicted/not downloaded locally, raising `StorageUnavailableError` or triggering download on demand.
-* **VaultSyncEngine:** Bi-directional sync engine (`agent_personal_vault.sync.VaultSyncEngine`) supporting local-only upload, remote-only download, identical no-op, and divergent conflict resolution. Conflicts generate deterministic conflict preservation copies (`<id>.conflict.<timestamp>.<hash>.json`) without silently overwriting divergent data.
+* **VaultSyncEngine:** Bi-directional sync engine (`agent_personal_vault.sync.VaultSyncEngine`) supporting local-only upload, remote-only download, tombstone deletion synchronization, identical no-op, and divergent conflict resolution. Conflicts generate deterministic collision-safe conflict preservation copies (`<id>-conflict-<hash>`) without silently overwriting divergent data or resurrecting tombstones.
 
 The vault is **DATA, not business logic**. Data structures are provider-independent and stored in deterministic JSON formats.
 
