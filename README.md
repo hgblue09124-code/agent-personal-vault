@@ -156,8 +156,9 @@ When strategy B supersedes strategy A:
 * **Atomic Writes:** Files are written to `.tmp` files in the same directory, flushed/fsynced, and atomically replaced (`os.replace`).
 * **Idempotency:** Re-ingesting an entity with identical data generates no duplicates or redundant audit entries.
 * **Duplicate Detection:** SHA-256 canonical hashing detects duplicate content.
-* **Corruption Protection:** `list_all()` and `get()` surface corrupted records by default (raising `ValueError`) instead of silently ignoring data loss. Diagnostic mode (`skip_invalid=True`) captures corrupt record details without silent failure.
-* **Relationship Integrity:** Relationship validation verifies that referenced entity IDs exist, types match, self-references are rejected where invalid, and circular supersession loops are detected.
+* **Corruption Protection:** `list_all()` and `get()` surface corrupted records by default (raising `StorageCorruptionError`) instead of silently ignoring data loss or overwriting corrupted files. Diagnostic mode (`skip_invalid=True`) captures corrupt record details without silent failure.
+* **Tombstone Deletion Semantics:** Deletions record durable tombstone entities (`.tombstones/<folder>/<id>.json`). Tombstones synchronize bi-directionally during provider sync so deleted entities never resurrect.
+* **Path Traversal & ID Security:** Provider entity IDs are strictly validated. IDs containing slashes, backslashes, `..`, absolute paths, or escaping paths are explicitly rejected with `ValueError`.
 * **Path Traversal Security:** Archive extraction in `BackupRestoreManager` enforces path containment to prevent path traversal security vulnerabilities.
 
 ---

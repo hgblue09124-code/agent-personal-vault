@@ -102,3 +102,31 @@ class Envelope:
             updated_at=data.get("updated_at"),
             provenance=prov,
         )
+
+
+@dataclass
+class Tombstone:
+    entity_type: str
+    entity_id: str
+    deleted_at: str
+    deleted_by: str = "agent-core"
+    schema_version: str = "1.0"
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "schema_version": self.schema_version,
+            "entity_type": self.entity_type,
+            "entity_id": self.entity_id,
+            "deleted_at": self.deleted_at,
+            "deleted_by": self.deleted_by,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "Tombstone":
+        return cls(
+            entity_type=data["entity_type"],
+            entity_id=data["entity_id"],
+            deleted_at=data["deleted_at"],
+            deleted_by=data.get("deleted_by", "agent-core"),
+            schema_version=data.get("schema_version", "1.0"),
+        )

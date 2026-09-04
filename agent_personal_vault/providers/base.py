@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Dict, Any, Optional, List
-from ..models import Envelope
+from ..models import Envelope, Tombstone
 
 
 class StorageError(ValueError):
@@ -71,4 +71,24 @@ class StorageProvider(ABC):
         Get provider-level metadata for an entity (mtime, size, content_hash, cloud_status, etc.).
         Returns None if entity does not exist.
         """
+        pass
+
+    @abstractmethod
+    def get_tombstone(self, entity_type: str, entity_id: str) -> Optional[Tombstone]:
+        """Get tombstone for entity if it was deleted."""
+        pass
+
+    @abstractmethod
+    def put_tombstone(self, tombstone: Tombstone) -> bool:
+        """Record tombstone for deleted entity."""
+        pass
+
+    @abstractmethod
+    def list_tombstones(self, entity_type: Optional[str] = None) -> List[Tombstone]:
+        """List tombstones, optionally filtered by entity_type."""
+        pass
+
+    @abstractmethod
+    def delete_tombstone(self, entity_type: str, entity_id: str) -> bool:
+        """Remove a tombstone."""
         pass
