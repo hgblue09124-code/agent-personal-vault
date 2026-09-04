@@ -46,14 +46,26 @@ class VaultStore:
     def exists(self, entity_type: str, entity_id: str) -> bool:
         return self._get_entity_path(entity_type, entity_id).exists()
 
-    def get(self, entity_type: str, entity_id: str) -> Optional[Envelope]:
+    def get(self, entity_type: str, entity_id: str, validate_schema: bool = True) -> Optional[Envelope]:
         path = self._get_entity_path(entity_type, entity_id)
         if not path.exists():
             return None
-        data = json.loads(path.read_text(encoding="utf-8"))
-        return Envelope.from_dict(data)
+        try:
+            content = path.read_text(encoding="utf-8")
+            data = json.loads(content)
+            if validate_schema:
+                self.validator.validate_entity(data)
+            return Envelope.from_dict(data)
+        except Exception as err:
+            raise ValueError(f"Failed to read/validate entity '{entity_id}' of type '{entity_type}' from {path}: {err}") from err
 
-    def list_all(self, entity_type: str) -> List[Envelope]:
+    def list_all(
+        self,
+        entity_type: str,
+        skip_invalid: bool = False,
+        validate_schema: bool = True,
+        diagnostics: Optional[List[Dict[str, Any]]] = None
+    ) -> List[Envelope]:
         folder = TYPE_TO_FOLDER.get(entity_type)
         if not folder:
             return []
@@ -64,23 +76,52 @@ class VaultStore:
         entities = []
         for file in sorted(dir_path.glob("*.json")):
             try:
-                data = json.loads(file.read_text(encoding="utf-8"))
-                entities.append(Envelope.from_dict(data))
-            except Exception:
-                continue
+                content = file.read_text(encoding="utf-8")
+                data = json.loads(content)
+                if validate_schema:
+                    self.validator.validate_entity(data)
+                env = Envelope.from_dict(data)
+                entities.append(env)
+            except Exception as err:
+                error_info = {
+                    "file": str(file),
+                    "entity_type": entity_type,
+                    "error": str(err),
+                }
+                if diagnostics is not None:
+                    diagnostics.append(error_info)
+
+                if not skip_invalid:
+                    raise ValueError(f"Corrupted or invalid entity file '{file}' in store: {err}") from err
+
         return entities
 
     def validate_relationships(self, envelope: Envelope) -> List[str]:
         """
-        Verify that referenced IDs in the entity data exist in the store.
-        Returns a list of missing reference warnings/errors.
+        Verify that referenced IDs in the entity data exist in the store,
+        type matching is maintained, self-references are rejected where invalid,
+        and circular dependencies are detected.
+        Returns a list of error/warning messages.
         """
         missing = []
         d = envelope.data
 
-        # Relationship checks based on domain field semantics
+        # 1. Self-reference checks
+        if envelope.type == "strategy":
+            if d.get("supersedes") and d.get("supersedes") == envelope.id:
+                missing.append(f"Strategy '{envelope.id}' cannot supersede itself.")
+            if d.get("superseded_by") and d.get("superseded_by") == envelope.id:
+                missing.append(f"Strategy '{envelope.id}' cannot be superseded by itself.")
+        elif envelope.type == "goal":
+            if d.get("parent_goal_id") and d.get("parent_goal_id") == envelope.id:
+                missing.append(f"Goal '{envelope.id}' cannot set itself as parent_goal_id.")
+
+        # 2. Relationship target existence and type-checks
         ref_checks = []
-        if envelope.type == "task":
+        if envelope.type == "goal":
+            if d.get("parent_goal_id"):
+                ref_checks.append(("goal", d["parent_goal_id"]))
+        elif envelope.type == "task":
             if d.get("goal_id"):
                 ref_checks.append(("goal", d["goal_id"]))
             if d.get("strategy_id"):
@@ -103,10 +144,27 @@ class VaultStore:
                 ref_checks.append(("strategy", d["strategy_id"]))
             if d.get("task_id"):
                 ref_checks.append(("task", d["task_id"]))
+            if d.get("resulting_experience_id"):
+                ref_checks.append(("experience", d["resulting_experience_id"]))
 
         for ref_type, ref_id in ref_checks:
             if not self.exists(ref_type, ref_id):
-                missing.append(f"Referenced {ref_type} ID '{ref_id}' not found in store.")
+                missing.append(f"Referenced {ref_type} ID '{ref_id}' not found in {TYPE_TO_FOLDER[ref_type]} store.")
+
+        # 3. Circular supersession detection
+        if envelope.type == "strategy" and d.get("supersedes"):
+            visited = {envelope.id}
+            curr = d.get("supersedes")
+            while curr:
+                if curr in visited:
+                    missing.append(f"Circular supersession loop detected involving strategy '{curr}'.")
+                    break
+                visited.add(curr)
+                parent_env = self.get("strategy", curr, validate_schema=False)
+                if parent_env:
+                    curr = parent_env.data.get("supersedes")
+                else:
+                    break
 
         return missing
 

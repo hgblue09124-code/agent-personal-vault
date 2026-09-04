@@ -6,9 +6,78 @@ from .models import Envelope, StrategyStatus
 from .store import VaultStore
 
 
+LEGAL_STRATEGY_TRANSITIONS = {
+    StrategyStatus.CANDIDATE: {
+        StrategyStatus.CANDIDATE,
+        StrategyStatus.VALIDATED,
+        StrategyStatus.RETIRED,
+        StrategyStatus.SUPERSEDED,
+    },
+    StrategyStatus.VALIDATED: {
+        StrategyStatus.VALIDATED,
+        StrategyStatus.SUPPORTED,
+        StrategyStatus.WEAKENED,
+        StrategyStatus.RETIRED,
+        StrategyStatus.SUPERSEDED,
+    },
+    StrategyStatus.SUPPORTED: {
+        StrategyStatus.SUPPORTED,
+        StrategyStatus.WEAKENED,
+        StrategyStatus.RETIRED,
+        StrategyStatus.SUPERSEDED,
+    },
+    StrategyStatus.WEAKENED: {
+        StrategyStatus.WEAKENED,
+        StrategyStatus.VALIDATED,
+        StrategyStatus.RETIRED,
+        StrategyStatus.SUPERSEDED,
+    },
+    StrategyStatus.RETIRED: {StrategyStatus.RETIRED},
+    StrategyStatus.SUPERSEDED: {StrategyStatus.SUPERSEDED},
+}
+
+
 class StrategyManager:
     def __init__(self, store: VaultStore):
         self.store = store
+
+    @staticmethod
+    def validate_transition(current_status: StrategyStatus, new_status: StrategyStatus):
+        curr = StrategyStatus(current_status)
+        new_st = StrategyStatus(new_status)
+        allowed = LEGAL_STRATEGY_TRANSITIONS.get(curr, set())
+        if new_st not in allowed:
+            raise ValueError(
+                f"Illegal strategy state transition from '{curr.value}' to '{new_st.value}'. "
+                f"Allowed transitions: {[s.value for s in allowed]}"
+            )
+
+    def update_strategy_status(self, strategy_id: str, new_status: StrategyStatus, reason: Optional[str] = None) -> Envelope:
+        strat_env = self.store.get("strategy", strategy_id)
+        if not strat_env:
+            raise ValueError(f"Strategy '{strategy_id}' not found.")
+
+        current_status = StrategyStatus(strat_env.data["status"])
+        new_status = StrategyStatus(new_status)
+
+        self.validate_transition(current_status, new_status)
+
+        now_iso = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+        strat_env.data["status"] = new_status.value
+        strat_env.data["updated_at"] = now_iso
+        strat_env.updated_at = now_iso
+
+        self.store.put(strat_env)
+
+        self.store._write_audit_entry(
+            action_type="UPDATE",
+            entity_id=strategy_id,
+            entity_type="strategy",
+            changes={"old_status": current_status.value, "new_status": new_status.value},
+            reason=reason or f"Strategy status updated from {current_status.value} to {new_status.value}"
+        )
+
+        return strat_env
 
     def create_strategy(
         self,
@@ -109,12 +178,19 @@ class StrategyManager:
             if total > 0:
                 sd["confidence"] = round(sd["success_count"] / total, 2)
 
-            if sd["status"] == StrategyStatus.CANDIDATE.value and sd["success_count"] >= 1:
-                sd["status"] = StrategyStatus.VALIDATED.value
-            elif sd["status"] == StrategyStatus.VALIDATED.value and sd["success_count"] >= 3:
-                sd["status"] = StrategyStatus.SUPPORTED.value
-            elif sd["failure_count"] >= 3 and sd["confidence"] < 0.5 and sd["status"] not in (StrategyStatus.RETIRED.value, StrategyStatus.SUPERSEDED.value):
-                sd["status"] = StrategyStatus.WEAKENED.value
+            curr_status = StrategyStatus(sd["status"])
+            target_status = curr_status
+
+            if curr_status == StrategyStatus.CANDIDATE and sd["success_count"] >= 1:
+                target_status = StrategyStatus.VALIDATED
+            elif curr_status == StrategyStatus.VALIDATED and sd["success_count"] >= 3:
+                target_status = StrategyStatus.SUPPORTED
+            elif sd["failure_count"] >= 3 and sd["confidence"] < 0.5 and curr_status not in (StrategyStatus.RETIRED, StrategyStatus.SUPERSEDED):
+                target_status = StrategyStatus.WEAKENED
+
+            if target_status != curr_status:
+                self.validate_transition(curr_status, target_status)
+                sd["status"] = target_status.value
 
             sd["updated_at"] = now_iso
             strat_env.updated_at = now_iso

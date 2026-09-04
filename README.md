@@ -134,6 +134,8 @@ Supported Strategy statuses:
 * `RETIRED`: Explicitly deactivated.
 * `SUPERSEDED`: Replaced by a newer strategy version.
 
+State transitions are strictly validated. Direct jumps from `CANDIDATE` to `SUPPORTED` or transitions out of terminal states (`RETIRED`, `SUPERSEDED`) are rejected with `ValueError`.
+
 ### Strategy Supersession & Non-Destructive Mutation
 When strategy B supersedes strategy A:
 * Old strategy A status becomes `SUPERSEDED` and `superseded_by` points to B.
@@ -147,7 +149,9 @@ When strategy B supersedes strategy A:
 * **Atomic Writes:** Files are written to `.tmp` files in the same directory, flushed/fsynced, and atomically replaced (`os.replace`).
 * **Idempotency:** Re-ingesting an entity with identical data generates no duplicates or redundant audit entries.
 * **Duplicate Detection:** SHA-256 canonical hashing detects duplicate content.
-* **Relationship Integrity:** Relationship validation verifies that referenced entity IDs exist in the vault store.
+* **Corruption Protection:** `list_all()` and `get()` surface corrupted records by default (raising `ValueError`) instead of silently ignoring data loss. Diagnostic mode (`skip_invalid=True`) captures corrupt record details without silent failure.
+* **Relationship Integrity:** Relationship validation verifies that referenced entity IDs exist, types match, self-references are rejected where invalid, and circular supersession loops are detected.
+* **Path Traversal Security:** Archive extraction in `BackupRestoreManager` enforces path containment to prevent path traversal security vulnerabilities.
 
 ---
 

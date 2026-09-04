@@ -105,12 +105,24 @@ class BackupRestoreManager:
                     raise ValueError("Backup archive checksum verification failed!")
 
         # Extract to temporary directory
-        extract_dir = archive_path.parent / f"_tmp_restore_{uuid.uuid4().hex[:8]}"
+        extract_dir = (archive_path.parent / f"_tmp_restore_{uuid.uuid4().hex[:8]}").resolve()
         extract_dir.mkdir(parents=True, exist_ok=True)
 
         restored_count = 0
         try:
             with tarfile.open(archive_path, "r:gz") as tar:
+                # Path traversal vulnerability check
+                for member in tar.getmembers():
+                    mem_path = Path(member.name)
+                    if mem_path.is_absolute() or ".." in mem_path.parts:
+                        raise ValueError(f"Path traversal security violation in backup archive member: '{member.name}'")
+
+                    target_dest = (extract_dir / mem_path).resolve()
+                    try:
+                        target_dest.relative_to(extract_dir)
+                    except ValueError:
+                        raise ValueError(f"Path traversal security violation: member '{member.name}' escapes extraction root.")
+
                 if hasattr(tarfile, "data_filter"):
                     tar.extractall(path=extract_dir, filter="data")
                 else:

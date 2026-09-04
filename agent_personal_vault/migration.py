@@ -37,11 +37,28 @@ class MigrationEngine:
         self.register_migration("1.1", v1_0_to_v1_1)
 
     def migrate(self, envelope_dict: Dict[str, Any], target_version: str) -> Dict[str, Any]:
+        if not isinstance(envelope_dict, dict) or "id" not in envelope_dict or "type" not in envelope_dict:
+            raise ValueError("Invalid canonical envelope structure provided for migration.")
+
         current_version = envelope_dict.get("schema_version", "1.0")
         if current_version == target_version:
             return envelope_dict
 
-        if target_version in self.handlers:
-            return self.handlers[target_version](envelope_dict)
-        else:
-            raise ValueError(f"No migration handler registered for version '{target_version}'.")
+        if target_version not in self.handlers:
+            raise ValueError(
+                f"Unsupported migration: no handler registered to migrate schema from '{current_version}' to target version '{target_version}'."
+            )
+
+        original_id = envelope_dict["id"]
+        original_created_at = envelope_dict.get("created_at")
+
+        migrated = self.handlers[target_version](envelope_dict)
+
+        # Ensure fundamental identity properties are preserved
+        if migrated.get("id") != original_id:
+            raise ValueError(f"Migration error: entity ID changed from '{original_id}' to '{migrated.get('id')}'.")
+        if original_created_at and migrated.get("created_at") != original_created_at:
+            migrated["created_at"] = original_created_at
+
+        migrated["schema_version"] = target_version
+        return migrated
