@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agent-personal-vault.org/schema/v1/lesson.json",
+  "title": "Lesson Data v1",
+  "type": "object",
+  "required": ["title", "insight", "source_experiences"],
+  "properties": {
+    "title": { "type": "string" },
+    "insight": { "type": "string" },
+    "source_experiences": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "applicability": { "type": "string" },
+    "confidence": {
+      "type": "number",
+      "minimum": 0.0,
+      "maximum": 1.0
+    }
+  },
+  "additionalProperties": true
+}

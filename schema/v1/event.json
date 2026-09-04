@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agent-personal-vault.org/schema/v1/event.json",
+  "title": "Event Data v1",
+  "type": "object",
+  "required": ["event_type", "summary"],
+  "properties": {
+    "event_type": { "type": "string" },
+    "summary": { "type": "string" },
+    "details": { "type": "object" },
+    "actor": { "type": ["string", "null"] }
+  },
+  "additionalProperties": true
+}

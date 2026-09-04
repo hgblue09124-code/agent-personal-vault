@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agent-personal-vault.org/schema/v1/memory.json",
+  "title": "Memory Data v1",
+  "type": "object",
+  "required": ["subject", "content"],
+  "properties": {
+    "subject": { "type": "string" },
+    "content": { "type": "string" },
+    "memory_type": {
+      "type": "string",
+      "enum": ["episodic", "semantic", "procedural", "working"]
+    },
+    "importance": {
+      "type": "number",
+      "minimum": 0.0,
+      "maximum": 1.0
+    },
+    "tags": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "associations": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "additionalProperties": true
+}

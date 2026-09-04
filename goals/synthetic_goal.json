@@ -1,0 +1,23 @@
+{
+  "schema_version": "1.0",
+  "id": "goal-synth-101",
+  "type": "goal",
+  "created_at": "2025-01-01T00:00:00Z",
+  "updated_at": "2025-01-01T00:00:00Z",
+  "provenance": {
+    "source": "synthetic_generator",
+    "source_id": "gen-001",
+    "agent_version": "1.0.0",
+    "metadata": {}
+  },
+  "data": {
+    "title": "Ensure Vault Data Integrity",
+    "description": "Achieve robust atomic file writes and zero corruption across all store operations.",
+    "status": "ACTIVE",
+    "target_date": "2025-12-31T23:59:59Z",
+    "parent_goal_id": null,
+    "metrics": {
+      "target_reliability": 0.999
+    }
+  }
+}

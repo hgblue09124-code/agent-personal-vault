@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agent-personal-vault.org/schema/v1/strategy_application.json",
+  "title": "Strategy Application Data v1",
+  "type": "object",
+  "required": [
+    "strategy_id",
+    "task_id",
+    "applied_context",
+    "outcome",
+    "verification_result"
+  ],
+  "properties": {
+    "strategy_id": { "type": "string" },
+    "task_id": { "type": "string" },
+    "applied_context": { "type": "object" },
+    "outcome": {
+      "type": "string",
+      "enum": ["SUCCESS", "FAILURE", "INCONCLUSIVE"]
+    },
+    "verification_result": { "type": "string" },
+    "notes": { "type": ["string", "null"] },
+    "resulting_experience_id": { "type": ["string", "null"] },
+    "resulting_strategy_update": { "type": ["string", "null"] }
+  },
+  "additionalProperties": true
+}

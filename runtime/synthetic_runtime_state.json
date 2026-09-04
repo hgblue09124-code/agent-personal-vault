@@ -1,0 +1,25 @@
+{
+  "schema_version": "1.0",
+  "id": "run-synth-101",
+  "type": "runtime_state",
+  "created_at": "2025-01-01T00:00:00Z",
+  "updated_at": "2025-01-01T00:00:00Z",
+  "provenance": {
+    "source": "synthetic_generator",
+    "source_id": "gen-001",
+    "agent_version": "1.0.0",
+    "metadata": {}
+  },
+  "data": {
+    "session_id": "sess-synth-999",
+    "active_context": {
+      "mode": "vault_maintenance"
+    },
+    "running_tasks": [
+      "task-synth-101"
+    ],
+    "transient_memory": {
+      "last_checksum": "a1b2c3d4"
+    }
+  }
+}

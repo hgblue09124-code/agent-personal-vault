@@ -1,0 +1,45 @@
+# Python / Virtualenv
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv/
+
+# Testing & Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Secrets & Credentials (PRIVACY & SECURITY)
+.env*
+*.key
+*.pem
+*.p12
+*.crt
+*.cer
+secrets/
+credentials/
+tokens/
+*.pfx
+
+# Local databases & transient state
+*.db
+*.sqlite
+*.sqlite3
+*.log
+runtime/transient/
+
+# Real Backups & Archives (do NOT commit real personal backups)
+backups/real_*
+*.tar.gz
+*.zip
+*.tgz
+
+# IDE & OS
+.DS_Store
+.vscode/
+.idea/

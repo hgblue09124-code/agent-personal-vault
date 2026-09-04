@@ -1,0 +1,23 @@
+{
+  "schema_version": "1.0",
+  "id": "identity-synth-001",
+  "type": "identity",
+  "created_at": "2025-01-01T00:00:00Z",
+  "updated_at": "2025-01-01T00:00:00Z",
+  "provenance": {
+    "source": "synthetic_generator",
+    "source_id": "gen-001",
+    "agent_version": "1.0.0",
+    "metadata": { "environment": "test" }
+  },
+  "data": {
+    "display_name": "Synthetic Test User",
+    "handle": "synth_user",
+    "timezone": "UTC",
+    "locale": "en-US",
+    "public_keys": ["ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAISyntheticKeyExampleOnly"],
+    "attributes": {
+      "role": "autonomous_agent_persona"
+    }
+  }
+}

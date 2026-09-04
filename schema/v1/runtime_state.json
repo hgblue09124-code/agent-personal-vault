@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agent-personal-vault.org/schema/v1/runtime_state.json",
+  "title": "Runtime State Data v1",
+  "type": "object",
+  "required": ["session_id", "active_context"],
+  "properties": {
+    "session_id": { "type": "string" },
+    "active_context": { "type": "object" },
+    "running_tasks": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "transient_memory": { "type": "object" }
+  },
+  "additionalProperties": true
+}

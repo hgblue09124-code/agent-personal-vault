@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agent-personal-vault.org/schema/v1/experience.json",
+  "title": "Experience Data v1",
+  "type": "object",
+  "required": ["task_id", "action", "observation", "verification"],
+  "properties": {
+    "task_id": { "type": "string" },
+    "action": { "type": "string" },
+    "observation": { "type": "string" },
+    "verification": { "type": "string" },
+    "context": { "type": "object" },
+    "outcome_status": {
+      "type": "string",
+      "enum": ["SUCCESS", "FAILURE", "INCONCLUSIVE"]
+    },
+    "artifacts": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "additionalProperties": true
+}

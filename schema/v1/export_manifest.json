@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agent-personal-vault.org/schema/v1/export_manifest.json",
+  "title": "Export Manifest Data v1",
+  "type": "object",
+  "required": ["format_version", "exported_at", "entity_counts", "checksums"],
+  "properties": {
+    "format_version": { "type": "string" },
+    "exported_at": { "type": "string", "format": "date-time" },
+    "entity_counts": { "type": "object" },
+    "checksums": { "type": "object" }
+  },
+  "additionalProperties": true
+}

@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agent-personal-vault.org/schema/v1/knowledge.json",
+  "title": "Knowledge Data v1",
+  "type": "object",
+  "required": ["domain", "topic", "statement"],
+  "properties": {
+    "domain": { "type": "string" },
+    "topic": { "type": "string" },
+    "statement": { "type": "string" },
+    "confidence": {
+      "type": "number",
+      "minimum": 0.0,
+      "maximum": 1.0
+    },
+    "sources": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "tags": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "additionalProperties": true
+}

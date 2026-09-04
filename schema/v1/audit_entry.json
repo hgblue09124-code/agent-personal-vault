@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agent-personal-vault.org/schema/v1/audit_entry.json",
+  "title": "Audit Entry Data v1",
+  "type": "object",
+  "required": ["action_type", "entity_id", "entity_type"],
+  "properties": {
+    "action_type": {
+      "type": "string",
+      "enum": ["CREATE", "UPDATE", "SUPERSEDE", "DELETE", "EXPORT", "IMPORT", "RESTORE"]
+    },
+    "entity_id": { "type": "string" },
+    "entity_type": { "type": "string" },
+    "changes": { "type": "object" },
+    "actor": { "type": ["string", "null"] },
+    "reason": { "type": ["string", "null"] }
+  },
+  "additionalProperties": true
+}

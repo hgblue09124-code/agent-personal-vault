@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agent-personal-vault.org/schema/v1/backup_manifest.json",
+  "title": "Backup Manifest Data v1",
+  "type": "object",
+  "required": ["vault_version", "backup_timestamp", "total_entities", "archive_checksum"],
+  "properties": {
+    "vault_version": { "type": "string" },
+    "backup_timestamp": { "type": "string", "format": "date-time" },
+    "total_entities": { "type": "integer" },
+    "archive_checksum": { "type": "string" },
+    "entity_counts": { "type": "object" }
+  },
+  "additionalProperties": true
+}

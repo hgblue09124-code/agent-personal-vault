@@ -1,0 +1,23 @@
+{
+  "schema_version": "1.0",
+  "id": "aud-synth-101",
+  "type": "audit_entry",
+  "created_at": "2025-01-01T00:00:00Z",
+  "updated_at": "2025-01-01T00:00:00Z",
+  "provenance": {
+    "source": "synthetic_generator",
+    "source_id": "gen-001",
+    "agent_version": "1.0.0",
+    "metadata": {}
+  },
+  "data": {
+    "action_type": "CREATE",
+    "entity_id": "strat-synth-101",
+    "entity_type": "strategy",
+    "changes": {
+      "status": "VALIDATED"
+    },
+    "actor": "agent-core",
+    "reason": "Initial creation from synthetic lesson les-synth-101"
+  }
+}

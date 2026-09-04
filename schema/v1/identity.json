@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agent-personal-vault.org/schema/v1/identity.json",
+  "title": "Identity Data v1",
+  "type": "object",
+  "required": ["display_name"],
+  "properties": {
+    "display_name": { "type": "string" },
+    "handle": { "type": ["string", "null"] },
+    "timezone": { "type": ["string", "null"] },
+    "locale": { "type": ["string", "null"] },
+    "public_keys": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "attributes": { "type": "object" }
+  },
+  "additionalProperties": true
+}

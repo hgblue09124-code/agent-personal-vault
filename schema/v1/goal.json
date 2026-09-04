@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agent-personal-vault.org/schema/v1/goal.json",
+  "title": "Goal Data v1",
+  "type": "object",
+  "required": ["title", "status"],
+  "properties": {
+    "title": { "type": "string" },
+    "description": { "type": ["string", "null"] },
+    "status": {
+      "type": "string",
+      "enum": ["PLANNED", "ACTIVE", "COMPLETED", "PAUSED", "ABANDONED"]
+    },
+    "target_date": { "type": ["string", "null"], "format": "date-time" },
+    "parent_goal_id": { "type": ["string", "null"] },
+    "metrics": { "type": "object" }
+  },
+  "additionalProperties": true
+}

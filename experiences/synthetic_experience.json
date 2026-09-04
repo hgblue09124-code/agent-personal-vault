@@ -1,0 +1,25 @@
+{
+  "schema_version": "1.0",
+  "id": "exp-synth-101",
+  "type": "experience",
+  "created_at": "2025-01-01T00:00:00Z",
+  "updated_at": "2025-01-01T00:00:00Z",
+  "provenance": {
+    "source": "synthetic_generator",
+    "source_id": "gen-001",
+    "agent_version": "1.0.0",
+    "metadata": {}
+  },
+  "data": {
+    "task_id": "task-synth-101",
+    "action": "Applied atomic rename write strategy during store flush",
+    "observation": "File content was cleanly written with no zero-byte truncation despite simulated abrupt interrupt",
+    "verification": "Read back entity from disk and verified checksum match",
+    "context": {
+      "os": "Linux",
+      "fs": "ext4"
+    },
+    "outcome_status": "SUCCESS",
+    "artifacts": ["audit/synthetic_audit_entry.json"]
+  }
+}

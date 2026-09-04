@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agent-personal-vault.org/schema/v1/user_context.json",
+  "title": "User Context Data v1",
+  "type": "object",
+  "required": ["preferences", "constraints"],
+  "properties": {
+    "preferences": { "type": "object" },
+    "constraints": { "type": "object" },
+    "working_hours": { "type": "object" },
+    "communication_style": { "type": "object" },
+    "environment": { "type": "object" }
+  },
+  "additionalProperties": true
+}

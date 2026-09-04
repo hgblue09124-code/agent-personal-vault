@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agent-personal-vault.org/schema/v1/task.json",
+  "title": "Task Data v1",
+  "type": "object",
+  "required": ["title", "status"],
+  "properties": {
+    "title": { "type": "string" },
+    "description": { "type": ["string", "null"] },
+    "status": {
+      "type": "string",
+      "enum": ["PENDING", "IN_PROGRESS", "COMPLETED", "FAILED", "BLOCKED", "CANCELLED"]
+    },
+    "goal_id": { "type": ["string", "null"] },
+    "strategy_id": { "type": ["string", "null"] },
+    "actions": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "result": { "type": "object" }
+  },
+  "additionalProperties": true
+}

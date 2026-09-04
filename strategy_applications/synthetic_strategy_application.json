@@ -1,0 +1,25 @@
+{
+  "schema_version": "1.0",
+  "id": "app-synth-101",
+  "type": "strategy_application",
+  "created_at": "2025-01-01T00:00:00Z",
+  "updated_at": "2025-01-01T00:00:00Z",
+  "provenance": {
+    "source": "synthetic_generator",
+    "source_id": "gen-001",
+    "agent_version": "1.0.0",
+    "metadata": {}
+  },
+  "data": {
+    "strategy_id": "strat-synth-101",
+    "task_id": "task-synth-101",
+    "applied_context": {
+      "file_path": "identity/synthetic_identity.json"
+    },
+    "outcome": "SUCCESS",
+    "verification_result": "File integrity verified via SHA256 checksum match",
+    "notes": "Applied strategy during vault entity creation test",
+    "resulting_experience_id": "exp-synth-101",
+    "resulting_strategy_update": null
+  }
+}

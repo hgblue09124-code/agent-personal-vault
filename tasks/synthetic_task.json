@@ -1,0 +1,28 @@
+{
+  "schema_version": "1.0",
+  "id": "task-synth-101",
+  "type": "task",
+  "created_at": "2025-01-01T00:00:00Z",
+  "updated_at": "2025-01-01T00:00:00Z",
+  "provenance": {
+    "source": "synthetic_generator",
+    "source_id": "gen-001",
+    "agent_version": "1.0.0",
+    "metadata": {}
+  },
+  "data": {
+    "title": "Persist JSON entity atomically",
+    "description": "Write entity to store using atomic swap file procedure.",
+    "status": "COMPLETED",
+    "goal_id": "goal-synth-101",
+    "strategy_id": "strat-synth-101",
+    "actions": [
+      "Write payload to .tmp file",
+      "Flush buffer to disk",
+      "Atomically replace target file using os.replace"
+    ],
+    "result": {
+      "success": true
+    }
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "schema_version": "1.0",
+  "id": "strat-synth-101",
+  "type": "strategy",
+  "created_at": "2025-01-01T00:00:00Z",
+  "updated_at": "2025-01-01T00:00:00Z",
+  "provenance": {
+    "source": "synthetic_generator",
+    "source_id": "gen-001",
+    "agent_version": "1.0.0",
+    "metadata": {}
+  },
+  "data": {
+    "strategy_id": "strat-synth-101",
+    "name": "Atomic Temporary File Replace",
+    "description": "Write target content to temporary file before atomically renaming to target path.",
+    "rule": "IF saving file THEN write to path + '.tmp' AND call os.replace(tmp_path, target_path)",
+    "applicable_context": {
+      "storage_type": "local_filesystem"
+    },
+    "prerequisites": [
+      "Write permission in target directory"
+    ],
+    "expected_outcome": "Zero file corruption and atomic file state changes.",
+    "evidence": [
+      "exp-synth-101"
+    ],
+    "success_count": 1,
+    "failure_count": 0,
+    "inconclusive_count": 0,
+    "confidence": 0.95,
+    "status": "VALIDATED",
+    "version": 1,
+    "provenance": {
+      "source": "synthetic_generator"
+    },
+    "source_experiences": [
+      "exp-synth-101"
+    ],
+    "supersedes": null,
+    "superseded_by": null,
+    "created_at": "2025-01-01T00:00:00Z",
+    "updated_at": "2025-01-01T00:00:00Z",
+    "metadata": {
+      "category": "storage_reliability"
+    }
+  }
+}

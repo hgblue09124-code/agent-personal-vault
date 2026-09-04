@@ -1,0 +1,20 @@
+{
+  "schema_version": "1.0",
+  "id": "les-synth-101",
+  "type": "lesson",
+  "created_at": "2025-01-01T00:00:00Z",
+  "updated_at": "2025-01-01T00:00:00Z",
+  "provenance": {
+    "source": "synthetic_generator",
+    "source_id": "gen-001",
+    "agent_version": "1.0.0",
+    "metadata": {}
+  },
+  "data": {
+    "title": "Atomic File Renames Prevent Partial Writes",
+    "insight": "Always write to a unique temporary file in the same filesystem directory and use atomic rename/replace to prevent corruption.",
+    "source_experiences": ["exp-synth-101"],
+    "applicability": "Local disk storage and JSON database persistence",
+    "confidence": 0.95
+  }
+}

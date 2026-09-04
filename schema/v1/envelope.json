@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agent-personal-vault.org/schema/v1/envelope.json",
+  "title": "Canonical Envelope v1",
+  "type": "object",
+  "required": ["schema_version", "id", "type", "created_at", "updated_at", "provenance", "data"],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "pattern": "^1\\.[0-9]+$"
+    },
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "identity",
+        "user_context",
+        "memory",
+        "knowledge",
+        "experience",
+        "lesson",
+        "strategy",
+        "strategy_application",
+        "goal",
+        "task",
+        "event",
+        "runtime_state",
+        "audit_entry",
+        "export_manifest",
+        "backup_manifest"
+      ]
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "provenance": {
+      "type": "object",
+      "required": ["source"],
+      "properties": {
+        "source": { "type": "string" },
+        "source_id": { "type": ["string", "null"] },
+        "agent_version": { "type": ["string", "null"] },
+        "metadata": { "type": "object" }
+      },
+      "additionalProperties": true
+    },
+    "data": {
+      "type": "object"
+    }
+  },
+  "additionalProperties": false
+}
